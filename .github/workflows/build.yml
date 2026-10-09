@@ -1,0 +1,28 @@
+name: build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: free60/libxenon:latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Export variables
+      run: |
+        echo DEVKITXENON=/usr/local/xenon >> $GITHUB_ENV
+        echo /usr/local/xenon/bin >> $GITHUB_PATH
+        echo /usr/local/xenon/usr/bin >> $GITHUB_PATH
+    - name: Prepare Git for build
+      run: git config --global --add safe.directory $GITHUB_WORKSPACE
+    - name: Build (browser)
+      run: make
+    - name: Build (library)
+      run: make -f Makefile_lib
+    - uses: actions/upload-artifact@v4
+      with:
+        name: ZLX-Browser
+        path: zlx_browserk.elf*
