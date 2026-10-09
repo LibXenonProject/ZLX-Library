@@ -1,15 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <debug.h>
-#include <libfat/fat.h>
-#include <libext2/ext2.h>
-#include <libntfs/ntfs.h>
-#include <libxtaf/xtaf.h>
-#include <iso9660/iso9660.h>
-#include <sys/iosupport.h>
-#include <diskio/disc_io.h>
-#include <byteswap.h>
 #include "mount.h"
 //#include "../mplayer/mplayerlib.h"
 
@@ -60,17 +48,6 @@ static void AddPartition(sec_t sector, int device, int type, int *devnum) {
 			if (!fatMount(mount, disc, sector, 2, 64))
 				return;
 			fatGetVolumeLabel(mount, part[device][*devnum].name);
-			break;
-		case T_NTFS:
-			if (!ntfsMount(mount, disc, sector, 2, 64, NTFS_DEFAULT | NTFS_RECOVER))
-				return;
-
-			name = (char *) ntfsGetVolumeName(mount);
-
-			if (name && name[0])
-				strcpy(part[device][*devnum].name, name);
-			else
-				part[device][*devnum].name[0] = 0;
 			break;
 		case T_EXT2:
 			if (!ext2Mount(mount, disc, sector, 2, 128, EXT2_FLAG_DEFAULT))
@@ -178,31 +155,12 @@ static int FindPartitions(int device) {
 
 			// Figure out what type of partition this is
 			switch (partition->type) {
-					// NTFS partition
-				case PARTITION_TYPE_NTFS:
-				{
-					debug_printf("Partition %i: Claims to be NTFS\n", i + 1);
-
-					// Read and validate the NTFS partition
-					if (interface->readSectors(part_lba, 1, &sector)) {
-						debug_printf("sector.boot.oem_id: 0x%x\n", sector.boot.oem_id);
-						debug_printf("NTFS_OEM_ID: 0x%x\n", NTFS_OEM_ID);
-						if (sector.boot.oem_id == NTFS_OEM_ID) {
-							debug_printf("Partition %i: Valid NTFS boot sector found\n", i + 1);
-							AddPartition(part_lba, device, T_NTFS, &devnum);
-						} else {
-							debug_printf("Partition %i: Invalid NTFS boot sector, not actually NTFS\n", i + 1);
-						}
-					}
-					break;
-				}
-					// DOS 3.3+ or Windows 95 extended partition
 				case PARTITION_TYPE_DOS33_EXTENDED:
 				case PARTITION_TYPE_WIN95_EXTENDED:
 				{
 					debug_printf("Partition %i: Claims to be Extended\n", i + 1);
 
-					// Walk the extended partition chain, finding all NTFS partitions within it
+					// Walk the extended partition chain
 					sec_t ebr_lba = part_lba;
 					sec_t next_erb_lba = 0;
 					do {
@@ -228,22 +186,9 @@ static int FindPartitions(int device) {
 								if (sector.ebr.partition.type == PARTITION_TYPE_LINUX) {
 									debug_printf("Partition : type ext2/3/4 found\n");
 									AddPartition(part_lba, device, T_EXT2, &devnum);
-								}// Check if this partition has a valid NTFS boot record
+								}// Check if this partition has a valid FAT boot record
 								else if (interface->readSectors(part_lba, 1, &sector)) {
-									if (sector.boot.oem_id == NTFS_OEM_ID) {
-										debug_printf(
-												"Logical Partition @ %d: Valid NTFS boot sector found\n",
-												part_lba);
-										if (sector.ebr.partition.type
-												!= PARTITION_TYPE_NTFS) {
-											debug_printf(
-													"Logical Partition @ %d: Is NTFS but type is 0x%x; 0x%x was expected\n",
-													part_lba,
-													sector.ebr.partition.type,
-													PARTITION_TYPE_NTFS);
-										}
-										AddPartition(part_lba, device, T_NTFS, &devnum);
-									} else if (!memcmp(sector.buffer
+									if (!memcmp(sector.buffer
 											+ BPB_FAT16_fileSysType, FAT_SIG,
 											sizeof (FAT_SIG)) || !memcmp(
 											sector.buffer
@@ -274,19 +219,10 @@ static int FindPartitions(int device) {
 					// Unknown or unsupported partition type
 				default:
 				{
-					// Check if this partition has a valid NTFS boot record anyway,
+					// Check if this partition has a FAT or EXT2FS filesystem anyway
 					// it might be misrepresented due to a lazy partition editor
 					if (interface->readSectors(part_lba, 1, &sector)) {
-						if (sector.boot.oem_id == NTFS_OEM_ID) {
-							debug_printf("Partition %i: Valid NTFS boot sector found\n", i + 1);
-							if (partition->type != PARTITION_TYPE_NTFS) {
-								debug_printf(
-										"Partition %i: Is NTFS but type is 0x%x; 0x%x was expected\n",
-										i + 1, partition->type,
-										PARTITION_TYPE_NTFS);
-							}
-							AddPartition(part_lba, device, T_NTFS, &devnum);
-						} else if (!memcmp(sector.buffer + BPB_FAT16_fileSysType,
+						if (!memcmp(sector.buffer + BPB_FAT16_fileSysType,
 								FAT_SIG, sizeof (FAT_SIG)) || !memcmp(
 								sector.buffer + BPB_FAT32_fileSysType, FAT_SIG,
 								sizeof (FAT_SIG))) {
@@ -306,14 +242,10 @@ static int FindPartitions(int device) {
 	{
 		debug_printf("No Master Boot Record was found or no partitions found!\n");
 
-		// As a last-ditched effort, search the first 64 sectors of the device for stray NTFS/FAT partitions
+		// As a last-ditched effort, search the first 64 sectors of the device for stray FAT or EXT2FS partitions
 		for (i = 0; i < 64; i++) {
 			if (interface->readSectors(i, 1, &sector)) {
-				if (sector.boot.oem_id == NTFS_OEM_ID) {
-					debug_printf("Valid NTFS boot sector found at sector %d!\n", i);
-					AddPartition(i, device, T_NTFS, &devnum);
-					break;
-				} else if (!memcmp(sector.buffer + BPB_FAT16_fileSysType, FAT_SIG,
+			    if (!memcmp(sector.buffer + BPB_FAT16_fileSysType, FAT_SIG,
 						sizeof (FAT_SIG)) || !memcmp(sector.buffer
 						+ BPB_FAT32_fileSysType, FAT_SIG, sizeof (FAT_SIG))) {
 					debug_printf("Partition : Valid FAT boot sector found\n");
@@ -338,10 +270,6 @@ static void UnmountPartitions(int device) {
 				part[device][i].type = 0;
 				sprintf(mount, "%s:", part[device][i].mount);
 				fatUnmount(mount);
-				break;
-			case T_NTFS:
-				part[device][i].type = 0;
-				ntfsUnmount(part[device][i].mount, false);
 				break;
 			case T_EXT2:
 				part[device][i].type = 0;

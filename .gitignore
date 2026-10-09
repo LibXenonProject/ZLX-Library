@@ -1,0 +1,7 @@
+build/
+*.a
+*.d
+*.o
+*.elf
+*.elf32
+*.map

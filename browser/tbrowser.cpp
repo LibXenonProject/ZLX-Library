@@ -22,14 +22,6 @@ int main(int argc, char **argv) {
     Hw::SystemInit(INIT_SOUND|INIT_VIDEO|INIT_USB|INIT_ATA|INIT_ATAPI|INIT_FILESYSTEM|INIT_SFCX);
     {
         lpBrowserActionEntry action = new BrowserActionEntry();
-        action->name = "Start HTTPD";
-        action->action = ActionStartHttpd;
-        action->param = NULL;
-        App.AddAction(action);
-    }
-    
-    {
-        lpBrowserActionEntry action = new BrowserActionEntry();
         action->name = "Return to xell";
         action->action = ActionReturnToXell;
         action->param = NULL;

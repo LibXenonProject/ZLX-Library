@@ -19,7 +19,7 @@ TARGET		:=	zlx
 BUILD		:=	build
 SOURCES		:=	incbin zlx
 DATA		:=	data 
-INCLUDES	:=	incbin zlx libs/include
+INCLUDES	:=	incbin zlx
 
 #---------------------------------------------------------------------------------
 # options for code generation
