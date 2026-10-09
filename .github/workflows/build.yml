@@ -8,7 +8,7 @@ jobs:
     container: free60/libxenon:latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
       with:
         fetch-depth: 0
     - name: Export variables
@@ -22,7 +22,7 @@ jobs:
       run: make
     - name: Build (library)
       run: make -f Makefile_lib
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       with:
         name: ZLX-Browser
         path: zlx_browserk.elf*
