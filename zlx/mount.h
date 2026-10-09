@@ -11,7 +11,7 @@ extern "C" {
 #include <debug.h>
 #include <libfat/fat.h>
 #include <libext2/ext2.h>
-#include <libntfs/ntfs.h>
+#include <libxtaf/xtaf.h>
 #include <iso9660/iso9660.h>
 #include <sys/iosupport.h>
 #include <diskio/disc_io.h>
