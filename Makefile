@@ -17,8 +17,8 @@ include $(DEVKITXENON)/rules
 #---------------------------------------------------------------------------------
 TARGET		:=	zlx_browserk
 BUILD		:=	build
-SOURCES		:=	incbin zlx browser  xell/httpd 
-DATA		:=	data 
+SOURCES		:=	incbin zlx browser
+DATA		:=	data
 INCLUDES	:=	incbin zlx
 
 #---------------------------------------------------------------------------------

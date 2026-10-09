@@ -45,10 +45,6 @@ extern "C" {
 #define printf
 //#define XELL_2S
 
-void ActionStartHttpd(void * unused) {
-    // httpd_start();
-}
-
 void ActionReturnToXell(void * unused) {
     exit(0);
 }
