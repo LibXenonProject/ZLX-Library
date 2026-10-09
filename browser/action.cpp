@@ -317,7 +317,7 @@ void ActionFlashNand(const char * filename) {
     flash_from_file(filename, -1);
 }
 
-void ActionLaunchElf(const char * filename) {
+void ActionLaunchElf(char * filename) {
     char * elf = NULL;
     // read file by chunk
     FILE * f = fopen(filename, "rb");
@@ -349,6 +349,12 @@ void ActionLaunchElf(const char * filename) {
         // read elf header ...
         unsigned int elf_header = 0x7F454C46;
         if (memcmp(&elf_header, elf, 4) == 0) {
+            char * argv[] = {
+                filename,
+            };
+            int argc = sizeof (argv) / sizeof (char *);
+
+            elf_setArgcArgv(argc, argv);
             elf_runFromMemory(elf, size);
         } else {
 
