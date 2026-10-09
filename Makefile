@@ -19,7 +19,7 @@ TARGET		:=	zlx_browserk
 BUILD		:=	build
 SOURCES		:=	incbin zlx browser  xell/httpd 
 DATA		:=	data 
-INCLUDES	:=	incbin zlx libs/include
+INCLUDES	:=	incbin zlx
 
 #---------------------------------------------------------------------------------
 # options for code generation

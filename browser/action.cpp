@@ -43,13 +43,10 @@ extern "C" {
 #include "tbrowser.h"
 
 #define printf
-extern "C" {
-    void httpd_start();
-}
 //#define XELL_2S
 
 void ActionStartHttpd(void * unused) {
-    httpd_start();
+    // httpd_start();
 }
 
 void ActionReturnToXell(void * unused) {
